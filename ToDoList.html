@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ToDoList</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet"
+        integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+    <style>
+        .completed {
+            text-decoration: line-through
+        }
+    </style>
+</head>
+
+<body>
+    <div id="app">
+        <div id="app" class="container my-3">
+            <div class="input-group mb-3">
+                <span class="input-group-text">待辦事項</span>
+                <input class="form-control" type="text" id="newTodo" placeholder="準備要做的任務" v-model="newTodo"
+                    @keyup.enter="addList">
+                <button class="btn btn-primary" type="button" id="addTodo" @click="addList">新增</button>
+            </div>
+            <div class="card text-center">
+                <ul class="list-group list-group-flush text-left" id="todoList" v-for="item in filterList"
+                    :key="item.id">
+                    <li class="list-group-item">
+                        <div class="d-flex">
+                            <div class="form-check">
+                                <input v-if="cacheList.id === item.id" v-model="cacheList.text" class="form-control"
+                                    type="text" />
+                                <div v-else>
+                                    <input :id="item.id" type="checkbox" class="form-check-input"
+                                        @click="item.completed = !item.completed" :checked="item.completed">
+                                    <label :for="item.id"
+                                        :class="item.completed ? 'completed' : '' ">{{item.text}}</label>
+                                </div>
+                            </div>
+                            <button v-if="cacheList.id === item.id" type="button" class="btn btn-primary ms-auto"
+                                @click="doneEdit">編輯完成</button>
+                            <button v-else type="button" class="btn btn-primary ms-auto"
+                                @click="editList(item)">編輯任務</button>
+                            <button type="button" class="btn-close ms-auto remove" @click="removeList(item)"></button>
+                        </div>
+                    </li>
+                </ul>
+                <div class="card-footer d-flex justify-content-between">
+                    <span>有 <span id="taskCount">{{todoList.length}}</span> 筆任務</span>
+                    <span>有 <span id="taskCount">{{completedLength}}</span> 筆已完成</span>
+                    <div>
+                        <a href="#" class="me-3" @click="visibility = 'all' ">全部</a>
+                        <a href="#" class="me-3" @click="visibility = 'undone' ">未完成</a>
+                        <a href="#" class="me-3" @click="visibility = 'completed' ">已完成</a>
+                        <a href="#" @click='removeAllList'>清除所有任務</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8"
+        crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/vue@next"></script>
+    <script>
+        Vue.createApp({
+            data() {
+                return {
+                    newTodo: '',
+                    todoList: [],
+                    cacheList: [],
+                    visibility: 'all',
+                }
+            },
+            methods: {
+                // 新增資料
+                addList() {
+                    // 如果空白 return
+                    if (this.newTodo == '') { return };
+                    this.todoList.push({
+                        // id: this.todoList.length + 1,    // 數值
+                        id: Date.now(),                     // 時間
+                        text: this.newTodo,
+                        completed: false,
+                    });
+                    this.newTodo = "";
+                },
+                // 移除資料
+                removeList(item) {
+                    const index = this.todoList.findIndex(obj => obj.id === item.id);
+                    console.log(item.id);
+                    this.todoList.splice(index, 1);
+                },
+                // 移除所有資料 
+                removeAllList() {
+                    if (window.confirm('你確定要刪除全部 Todo?')) { this.todoList = []; }
+                },
+                // 編輯資料
+                editList(item) {
+                    if (item.completed == true) { return; }
+                    this.cacheList = { ...item };
+                },
+                // 編輯完成
+                doneEdit() {
+                    const index = this.todoList.findIndex(obj => obj.id === this.cacheList.id);
+                    // 把資料寫回索引
+                    this.todoList[index] = this.cacheList;
+                    // 清空緩存
+                    this.cacheList = [];
+                }
+            },
+            computed: {
+                // 過濾列表
+                filterList() {
+                    switch (this.visibility) {
+                        case 'all': return this.todoList;
+                        case 'undone': return this.todoList.filter((item) => !item.completed);
+                        case 'completed': return this.todoList.filter((item) => item.completed);
+                    };
+                },
+                // 已完成數量
+                completedLength() {
+                    return this.todoList.filter((item) => item.completed).length;
+                },
+
+            },
+
+
+
+        }).mount('#app');
+    </script>
+</body>
+
+</html>
