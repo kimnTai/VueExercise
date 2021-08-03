@@ -19,7 +19,9 @@
 <body>
     <div id="app">
         <div id="app" class="container my-3">
-            <div><h1>Todo List</h1></div>
+            <div>
+                <h1>Todo List</h1>
+            </div>
             <div class="input-group mb-3">
                 <span class="input-group-text">待辦事項</span>
                 <input class="form-control" type="text" id="newTodo" placeholder="準備要做的任務" v-model="newTodo"
@@ -146,8 +148,6 @@
                     deep: true,
                 }
             }
-
-
         }).mount('#app');
     </script>
 </body>
