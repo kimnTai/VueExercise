@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+
+<head>
+   <meta charset="UTF-8">
+   <meta http-equiv="X-UA-Compatible" content="IE=edge">
+   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+   <title>TodoList_Composition</title>
+   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/css/bootstrap.min.css" rel="stylesheet"
+      integrity="sha384-wEmeIV1mKuiNpC+IOBjI7aAzPcEZeedi5yW5f2yOq55WWLwNGmvvx4Um1vskeMj0" crossorigin="anonymous">
+   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css">
+   <style>
+      .completed {
+         text-decoration: line-through
+      }
+   </style>
+</head>
+
+<body>
+   <div id="app">
+      <div id="app" class="container my-3">
+         <div>
+            <h1>Todo List</h1>
+         </div>
+         <div class="input-group mb-3">
+            <span class="input-group-text">待辦事項</span>
+            <input class="form-control" type="text" id="newTodo" placeholder="準備要做的任務" v-model="newTodo"
+               @keyup.enter="addList">
+            <button class="btn btn-primary" type="button" id="addTodo" @click="addList">新增</button>
+         </div>
+         <div class="card text-center">
+            <ul class="list-group list-group-flush text-left" id="todoList" v-for="item in filterList" :key="item.id">
+               <li class="list-group-item">
+                  <div class="d-flex">
+                     <div class="form-check">
+                        <input v-if="cacheList.id === item.id" v-model="cacheList.text" class="form-control"
+                           type="text" />
+                        <div v-else>
+                           <input :id="item.id" type="checkbox" class="form-check-input"
+                              @click="item.completed = !item.completed" :checked="item.completed">
+                           <label :for="item.id" :class="item.completed ? 'completed' : '' ">{{item.text}}</label>
+                        </div>
+                     </div>
+                     <div class="btn-group ms-auto">
+                        <button v-if="cacheList.id === item.id" type="button" class="btn btn-success me-3"
+                           @click="doneEdit">編輯完成</button>
+                        <button v-else type="button" class="btn btn-primary me-3" @click="editList(item)">編輯任務</button>
+                        <button type="button" class="btn btn-danger ms-auto remove"
+                           @click="removeList(item)">刪除</button>
+                     </div>
+                  </div>
+               </li>
+            </ul>
+            <div class="card-footer d-flex justify-content-between">
+               <span>有 <span class="h4" id="taskCount">{{todoList.length}}</span> 筆任務</span>
+               <span>有 <span class="h4" id="taskCount">{{completedLength}}</span> 筆已完成</span>
+               <div>
+                  <a href="#" class="btn btn-outline-primary me-3" @click="visibility = 'all' ">全部</a>
+                  <a href="#" class="btn btn-outline-secondary me-3" @click="visibility = 'undone' ">未完成</a>
+                  <a href="#" class="btn btn-outline-success me-3" @click="visibility = 'completed' ">已完成</a>
+                  <a href="#" class="btn btn-outline-danger" @click='removeAllList'>清除所有任務</a>
+               </div>
+            </div>
+         </div>
+      </div>
+   </div>
+   <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"
+      integrity="sha384-p34f1UUtsS3wqzfto5wAAmdvj+osOnFyQFpp4Ua3gs/ZVWx6oOypYoCJhGGScy+8"
+      crossorigin="anonymous"></script>
+   <!-- 使用 Vue 3 Composition API -->
+   <script type="module">
+      import { createApp, ref, onMounted, computed, watch } from 'https://cdnjs.cloudflare.com/ajax/libs/vue/3.2.0-beta.7/vue.esm-browser.min.js';
+      const app = createApp({
+         setup() {
+            // 載入 localStorage
+            const todoList = ref([]);
+            onMounted(() => {
+               todoList.value = JSON.parse(localStorage.getItem('歷史任務')) || [];
+            });
+            // 新增資料
+            const newTodo = ref('');
+            function addList() {
+               //如果空白 return
+               if (newTodo.value == '') { return };
+               todoList.value.push({
+                  // id: todoList.value.length + 1,    // 數值
+                  id: Date.now(),                     // 時間
+                  text: newTodo.value,
+                  completed: false,
+               });
+               localStorage.setItem('歷史任務', JSON.stringify(todoList.value));
+               newTodo.value = "";
+            };
+            // 移除資料
+            function removeList(item) {
+               const index = todoList.value.findIndex(obj => obj.id === item.id);
+               console.log(item.id);
+               todoList.value.splice(index, 1);
+            };
+            // 移除所有資料
+            function removeAllList() {
+               if (window.confirm('你確定要刪除全部 Todo?')) {
+                  localStorage.removeItem('歷史任務');
+                  todoList.value = [];
+               }
+            };
+            // 編輯資料
+            const cacheList = ref([]);
+            function editList(item) {
+               if (item.completed == true) { return; } //已完成就不能編輯
+               cacheList.value = { ...item };
+            };
+            function doneEdit() {
+               const index = todoList.value.findIndex(obj => obj.id === cacheList.value.id);
+               // 把資料寫回索引
+               todoList.value[index] = cacheList.value;
+               // 清空緩存
+               cacheList.value = [];
+            };
+            // 過濾列表
+            const visibility = ref('all');
+            const filterList = computed(() => {
+               switch (visibility.value) {
+                  case 'all': return todoList.value;
+                  case 'undone': return todoList.value.filter((item) => !item.completed);
+                  case 'completed': return todoList.value.filter((item) => item.completed);
+               };
+            });
+            // 已完成數量
+            const completedLength = computed(() => {
+               return todoList.value.filter((item) => item.completed).length;
+            });
+            // 監聽 todoList
+            watch(todoList, () => {
+               localStorage.setItem('歷史任務', JSON.stringify(todoList.value));
+            },
+               { deep: true }// 當欲觀察值的特性為 call by reference，需將 deep 值設定為 true
+            );
+
+            return {
+               newTodo,
+               visibility,
+               todoList,
+               cacheList,
+
+               addList,
+               removeList,
+               removeAllList,
+               editList,
+               doneEdit,
+               filterList,
+               completedLength,
+            };
+         }
+      });
+      app.mount('#app');
+
+   </script>
+</body>
+
+</html>
